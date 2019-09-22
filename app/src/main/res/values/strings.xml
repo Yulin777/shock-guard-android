@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">ApplesGuardian</string>
+    <string name="threshold">threshold</string>
 </resources>
