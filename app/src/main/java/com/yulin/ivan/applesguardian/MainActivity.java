@@ -1,7 +1,5 @@
 package com.yulin.ivan.applesguardian;
 
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.hardware.Sensor;
@@ -15,26 +13,27 @@ import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
-import android.os.Handler;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.work.ExistingPeriodicWorkPolicy;
+import androidx.work.PeriodicWorkRequest;
+import androidx.work.WorkManager;
+
+import com.yulin.ivan.applesguardian.workers.ToneWorker;
 
 import java.math.BigDecimal;
 import java.util.List;
-
-import static java.lang.Math.pow;
-import static java.lang.Math.sqrt;
+import java.util.concurrent.TimeUnit;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener, SensorEventListener {
 
-    private final static float THRESHOLD_CONST = 5;
-    private static final int TONE_DURATION = 300;
+    public final static float THRESHOLD_CONST = 5;
     TextView thresholdTextView;
     TextView vectorsView;
     float currentThreshold;
     private SharedPreferences sharedPref;
     private SensorManager sensorManager;
     List list;
-    private ToneGenerator toneGenerator;
-    private boolean isTonePlaying = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,12 +48,14 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         currentThreshold = sharedPref.getFloat(getString(R.string.threshold), THRESHOLD_CONST);
         thresholdTextView.setText(String.valueOf(currentThreshold));
+
+        PeriodicWorkRequest toneWorkRequest = new PeriodicWorkRequest.Builder(ToneWorker.class, 1000 / 30, TimeUnit.MILLISECONDS).build();
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork("toner worker", ExistingPeriodicWorkPolicy.REPLACE, toneWorkRequest);
     }
 
     @Override
     protected void onPostResume() {
         super.onPostResume();
-        toneGenerator = new ToneGenerator(AudioManager.STREAM_MUSIC, 100);
         setMotionListeners();
     }
 
@@ -89,14 +90,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         thresholdTextView.setText(String.valueOf(currentThreshold).substring(0, 3));
     }
 
-    @Override
-    protected void onStop() {
-        if (list.size() > 0) {
-            sensorManager.unregisterListener(this);
-        }
-        super.onStop();
-    }
-
     /**
      * WTF JAVA?!
      */
@@ -121,17 +114,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         float[] values = sensorEvent.values;
         vectorsView.setText("x: " + values[0] + "\ny: " + values[1] + "\nz: " + values[2]);
         Log.d("", "x: " + values[0] + "\ny: " + values[1] + "\nz: " + values[2]);
-
-        if (sqrt(pow(values[0], 2) + pow(values[1], 2) + pow(values[2], 2)) > currentThreshold + 10) {
-            if (!isTonePlaying) {
-                isTonePlaying = true;
-                toneGenerator.startTone(ToneGenerator.TONE_CDMA_PIP, TONE_DURATION);
-                new Handler().postDelayed(() -> isTonePlaying = false, TONE_DURATION);
-            }
-        }
     }
 
     @Override
     public void onAccuracyChanged(Sensor sensor, int i) {
     }
+
 }
