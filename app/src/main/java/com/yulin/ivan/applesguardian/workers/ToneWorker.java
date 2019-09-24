@@ -12,11 +12,9 @@ import android.os.Handler;
 
 import androidx.annotation.NonNull;
 import androidx.work.ListenableWorker;
-import androidx.work.Worker;
 import androidx.work.WorkerParameters;
 
 import com.google.common.util.concurrent.ListenableFuture;
-import com.yulin.ivan.applesguardian.MainActivity;
 import com.yulin.ivan.applesguardian.R;
 
 import java.util.List;

@@ -79,10 +79,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         switch (view.getId()) {
 
             case R.id.dec_threshold:
+                if (currentThreshold == 1f) return;
                 currentThreshold -= .1;
                 break;
 
             case R.id.inc_threshold:
+                if (currentThreshold == 10f) return;
                 currentThreshold += .1;
                 break;
         }
