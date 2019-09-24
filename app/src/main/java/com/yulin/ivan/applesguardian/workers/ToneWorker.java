@@ -20,6 +20,7 @@ import com.yulin.ivan.applesguardian.R;
 import java.util.List;
 
 import static android.content.Context.SENSOR_SERVICE;
+import static android.media.ToneGenerator.MAX_VOLUME;
 import static com.yulin.ivan.applesguardian.MainActivity.THRESHOLD_CONST;
 import static java.lang.Math.pow;
 import static java.lang.Math.sqrt;
@@ -30,11 +31,11 @@ import static java.lang.Math.sqrt;
 
 public class ToneWorker extends ListenableWorker {
 
-    public static final int TONE_DURATION = 300;
-    float currentThreshold;
+    private static final int TONE_DURATION = 300;
+    private float currentThreshold;
     private SharedPreferences sharedPref;
     private SensorManager sensorManager;
-    List list;
+    private List list;
     private ToneGenerator toneGenerator;
     private SensorEventListener sensorEventListener;
     private boolean isTonePlaying = false;
@@ -47,10 +48,12 @@ public class ToneWorker extends ListenableWorker {
 
         sharedPref = context.getSharedPreferences("", Context.MODE_PRIVATE);
 
-        toneGenerator = new ToneGenerator(AudioManager.STREAM_MUSIC, 100);
+        toneGenerator = new ToneGenerator(AudioManager.STREAM_MUSIC, MAX_VOLUME);
 
         sensorManager = (SensorManager) context.getSystemService(SENSOR_SERVICE);
-        list = sensorManager.getSensorList(Sensor.TYPE_ACCELEROMETER);
+        if (sensorManager != null) {
+            list = sensorManager.getSensorList(Sensor.TYPE_ACCELEROMETER);
+        }
 
         sensorEventListener = new SensorEventListener() {
             @Override
