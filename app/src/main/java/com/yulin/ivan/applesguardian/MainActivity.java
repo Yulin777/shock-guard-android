@@ -1,6 +1,7 @@
 package com.yulin.ivan.applesguardian;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -15,10 +16,12 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.work.ExistingPeriodicWorkPolicy;
 import androidx.work.PeriodicWorkRequest;
 import androidx.work.WorkManager;
 
+import com.yulin.ivan.applesguardian.services.AcceleratorToneService;
 import com.yulin.ivan.applesguardian.workers.ToneWorker;
 
 import java.math.BigDecimal;
@@ -49,8 +52,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         currentThreshold = sharedPref.getFloat(getString(R.string.threshold), THRESHOLD_CONST);
         thresholdTextView.setText(String.valueOf(currentThreshold));
 
-        PeriodicWorkRequest toneWorkRequest = new PeriodicWorkRequest.Builder(ToneWorker.class, 1000 / 30, TimeUnit.MILLISECONDS).build();
-        WorkManager.getInstance(this).enqueueUniquePeriodicWork("toner worker", ExistingPeriodicWorkPolicy.REPLACE, toneWorkRequest);
+//        PeriodicWorkRequest toneWorkRequest = new PeriodicWorkRequest.Builder(ToneWorker.class, 1000 / 30, TimeUnit.MILLISECONDS).build();
+//        WorkManager.getInstance(this).enqueueUniquePeriodicWork("toner worker", ExistingPeriodicWorkPolicy.REPLACE, toneWorkRequest);
+
+        startService();
+    }
+
+
+    public void startService() {
+        Intent serviceIntent = new Intent(this, AcceleratorToneService.class);
+        ContextCompat.startForegroundService(this, serviceIntent);
     }
 
     @Override
