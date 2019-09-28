@@ -9,12 +9,10 @@ import android.content.SharedPreferences;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
-import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
@@ -22,7 +20,6 @@ import androidx.core.content.ContextCompat;
 import com.yulin.ivan.applesguardian.services.AcceleratorToneService;
 
 import java.math.BigDecimal;
-import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener, SensorEventListener {
 
