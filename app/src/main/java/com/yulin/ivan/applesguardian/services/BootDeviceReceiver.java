@@ -54,7 +54,7 @@ public class BootDeviceReceiver extends BroadcastReceiver {
                     context.startService(serviceIntent);
                 }
 
-            } else if (intent.getAction().equals(BluetoothDevice.ACTION_ACL_DISCONNECTED)) {
+            } else /*if (intent.getAction().equals(BluetoothDevice.ACTION_ACL_DISCONNECTED))*/ {
                 context.stopService(serviceIntent);
             }
 

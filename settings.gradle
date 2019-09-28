@@ -1,2 +1,2 @@
 include ':app'
-rootProject.name='ApplesGuardian'
+rootProject.name='BruiseGuard'

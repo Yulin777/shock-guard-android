@@ -2,18 +2,13 @@ package com.yulin.ivan.applesguardian;
 
 import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothHeadset;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
-import android.hardware.Sensor;
-import android.hardware.SensorEvent;
-import android.hardware.SensorEventListener;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 
@@ -25,15 +20,21 @@ import com.yulin.ivan.applesguardian.services.BootDeviceReceiver;
 
 import java.math.BigDecimal;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener/*, SensorEventListener*/ {
+/**
+ * created byy Ivan Y on 25/09/19
+ */
+
+public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
     public final static float THRESHOLD_CONST = 5;
+    private static final float MAX_THRESHOLD_VALUE = 20;
+    private static final float MIN_THRESHOLD_VALUE = 1;
     public static boolean isRunning = false;
     TextView thresholdTextView;
     TextView vectorsView;
+    TextView thresholdExceededTextView;
     float currentThreshold;
     private SharedPreferences sharedPref;
-    private TextView thresholdExceededTextView;
 
 
     @Override
@@ -112,12 +113,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         switch (view.getId()) {
 
             case R.id.dec_threshold:
-                if (currentThreshold == 1f) return;
+                if (currentThreshold == MIN_THRESHOLD_VALUE) return;
                 currentThreshold -= .1;
                 break;
 
             case R.id.inc_threshold:
-                if (currentThreshold == 10f) return;
+                if (currentThreshold == MAX_THRESHOLD_VALUE) return;
                 currentThreshold += .1;
                 break;
         }
@@ -135,15 +136,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         return bd.floatValue();
     }
 
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-
-        String thresholdString = thresholdTextView.getText().toString();
-        float thresholdNum = Float.valueOf(thresholdString);
-        sharedPref.edit().putFloat(getString(R.string.threshold), thresholdNum).apply();
-    }
 /*
 
     @SuppressLint("SetTextI18n")

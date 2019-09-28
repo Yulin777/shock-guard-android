@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">ApplesGuardian</string>
+    <string name="app_name">BruiseGuard</string>
     <string name="threshold">threshold</string>
     <string name="linear_acc_avg">linear_acc_avg</string>
     <string name="service_is_running">service_is_running</string>
