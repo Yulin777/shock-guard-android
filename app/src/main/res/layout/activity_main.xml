@@ -49,14 +49,15 @@
         <TextView
             android:id="@+id/vectors"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            android:text="@string/waiting_for_bt_connection"/>
 
         <TextView
             android:id="@+id/exceed_threshold"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="15dp"
-            android:textColor="#f88" />
+            android:textColor="#f88"/>
 
     </LinearLayout>
 </LinearLayout>

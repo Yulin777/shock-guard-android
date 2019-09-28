@@ -16,7 +16,6 @@ import android.media.AudioManager;
 import android.media.ToneGenerator;
 import android.os.AsyncTask;
 import android.os.Build;
-import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
 
@@ -45,6 +44,7 @@ public class AcceleratorToneService extends Service implements SensorEventListen
 
     @Override
     public IBinder onBind(Intent intent) {
+        System.out.println("remove");
         return null;
     }
 
@@ -56,7 +56,7 @@ public class AcceleratorToneService extends Service implements SensorEventListen
 
         toneGenerator = new ToneGenerator(AudioManager.STREAM_MUSIC, MAX_VOLUME);
 
-        sensorManager = (SensorManager) getApplicationContext().getSystemService(SENSOR_SERVICE);
+        sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
         if (sensorManager != null) {
             linearAccelerationSensor = sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
         }
@@ -120,10 +120,11 @@ public class AcceleratorToneService extends Service implements SensorEventListen
         }
     }
 
-    private void sendBroadcastToActivity(float linearAccAvg, boolean thresholdExceede) {
+    private void sendBroadcastToActivity(float linearAccAvg, boolean thresholdExceeded) {
         Intent in = new Intent("com.yulin.ivan.applesguardian");
         in.putExtra(getString(R.string.linear_acc_avg), linearAccAvg);
-        in.putExtra(getString(R.string.threshold_exceeded), thresholdExceede);
+        in.putExtra(getString(R.string.threshold_exceeded), thresholdExceeded);
+        in.putExtra(getString(R.string.service_is_running), true);
         sendBroadcast(in);
     }
 
@@ -145,6 +146,12 @@ public class AcceleratorToneService extends Service implements SensorEventListen
     @Override
     public void onDestroy() {
         sharedPref.edit().putBoolean(getString(R.string.service_is_running), false).apply();
+        sensorManager.unregisterListener(this);
+
+        Intent in = new Intent("com.yulin.ivan.applesguardian");
+        in.putExtra(getString(R.string.service_is_running), false);
+        sendBroadcast(in);
+
         super.onDestroy();
     }
 
@@ -159,4 +166,6 @@ public class AcceleratorToneService extends Service implements SensorEventListen
         sharedPref.edit().putBoolean(getString(R.string.service_is_running), true).apply();
         super.onRebind(intent);
     }
+
+
 }

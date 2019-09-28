@@ -1,6 +1,9 @@
 package com.yulin.ivan.applesguardian;
 
 import android.annotation.SuppressLint;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothHeadset;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -18,17 +21,18 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
 import com.yulin.ivan.applesguardian.services.AcceleratorToneService;
+import com.yulin.ivan.applesguardian.services.BootDeviceReceiver;
 
 import java.math.BigDecimal;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener, SensorEventListener {
+public class MainActivity extends AppCompatActivity implements View.OnClickListener/*, SensorEventListener*/ {
 
     public final static float THRESHOLD_CONST = 5;
+    public static boolean isRunning = false;
     TextView thresholdTextView;
     TextView vectorsView;
     float currentThreshold;
     private SharedPreferences sharedPref;
-    private BroadcastReceiver broadcastReceiver;
     private TextView thresholdExceededTextView;
 
 
@@ -37,7 +41,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-
+        isRunning = true;
         thresholdTextView = findViewById(R.id.threshold);
         vectorsView = findViewById(R.id.vectors);
         thresholdExceededTextView = findViewById(R.id.exceed_threshold);
@@ -50,33 +54,44 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         thresholdTextView.setText(String.valueOf(currentThreshold));
 
         registerMyReceiver();
-        startService();
-    }
 
-    @Override
-    protected void onStop() {
-        super.onStop();
-
-        if(broadcastReceiver != null) {
-            unregisterReceiver(broadcastReceiver);
+        if (isBluetoothHeadsetConnected()) {
+            sendBroadcast(new Intent(this, BootDeviceReceiver.class).setAction("doesnt matter"));
         }
     }
 
     private void registerMyReceiver() {
-        broadcastReceiver = new BroadcastReceiver() {
+
+        BroadcastReceiver broadcastReceiver = new BroadcastReceiver() {
+
             @Override
             public void onReceive(Context context, Intent intent) {
 
-                float linearAccAvg = intent.getFloatExtra(getString(R.string.linear_acc_avg), 0);
-                vectorsView.setText(String.valueOf(linearAccAvg));
+                boolean isServiceRunning = intent.getBooleanExtra(getString(R.string.service_is_running), true);
 
-                boolean thresholdExceeded = intent.getBooleanExtra(getString(R.string.threshold_exceeded), false);
-                if (thresholdExceeded) {
-                    thresholdExceededTextView.setText(String.valueOf(linearAccAvg));
+                if (!isServiceRunning) {
+                    vectorsView.setText(getString(R.string.waiting_for_bt_connection));
+
+                } else {
+
+                    float linearAccAvg = intent.getFloatExtra(getString(R.string.linear_acc_avg), 0);
+                    vectorsView.setText(String.valueOf(linearAccAvg));
+
+                    boolean thresholdExceeded = intent.getBooleanExtra(getString(R.string.threshold_exceeded), false);
+                    if (thresholdExceeded) {
+                        thresholdExceededTextView.setText(String.valueOf(linearAccAvg));
+                    }
                 }
             }
         };
+
         registerReceiver(broadcastReceiver, new IntentFilter("com.yulin.ivan.applesguardian"));
+    }
+
+    @Override
+    protected void onStart() {
+        isRunning = true;
+        super.onStart();
     }
 
 
@@ -129,6 +144,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         float thresholdNum = Float.valueOf(thresholdString);
         sharedPref.edit().putFloat(getString(R.string.threshold), thresholdNum).apply();
     }
+/*
 
     @SuppressLint("SetTextI18n")
     @Override
@@ -141,5 +157,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     @Override
     public void onAccuracyChanged(Sensor sensor, int i) {
     }
+*/
 
+    @Override
+    protected void onDestroy() {
+        isRunning = false;
+        super.onDestroy();
+    }
+
+    public static boolean isBluetoothHeadsetConnected() {
+        BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        return mBluetoothAdapter != null && mBluetoothAdapter.isEnabled()
+                && mBluetoothAdapter.getProfileConnectionState(BluetoothHeadset.HEADSET) == BluetoothHeadset.STATE_CONNECTED;
+    }
 }
