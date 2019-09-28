@@ -1,14 +1,15 @@
 package com.yulin.ivan.applesguardian;
 
+import android.annotation.SuppressLint;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
-import android.media.AudioManager;
-import android.media.ToneGenerator;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -17,16 +18,11 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
-import androidx.work.ExistingPeriodicWorkPolicy;
-import androidx.work.PeriodicWorkRequest;
-import androidx.work.WorkManager;
 
 import com.yulin.ivan.applesguardian.services.AcceleratorToneService;
-import com.yulin.ivan.applesguardian.workers.ToneWorker;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener, SensorEventListener {
 
@@ -35,53 +31,67 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     TextView vectorsView;
     float currentThreshold;
     private SharedPreferences sharedPref;
-    private SensorManager sensorManager;
-    List list;
+    private BroadcastReceiver broadcastReceiver;
+    private TextView thresholdExceededTextView;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+
         thresholdTextView = findViewById(R.id.threshold);
         vectorsView = findViewById(R.id.vectors);
+        thresholdExceededTextView = findViewById(R.id.exceed_threshold);
         findViewById(R.id.dec_threshold).setOnClickListener(this);
         findViewById(R.id.inc_threshold).setOnClickListener(this);
 
-        sharedPref = getPreferences(Context.MODE_PRIVATE);
+        sharedPref = getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE);
 
         currentThreshold = sharedPref.getFloat(getString(R.string.threshold), THRESHOLD_CONST);
         thresholdTextView.setText(String.valueOf(currentThreshold));
 
-//        PeriodicWorkRequest toneWorkRequest = new PeriodicWorkRequest.Builder(ToneWorker.class, 1000 / 30, TimeUnit.MILLISECONDS).build();
-//        WorkManager.getInstance(this).enqueueUniquePeriodicWork("toner worker", ExistingPeriodicWorkPolicy.REPLACE, toneWorkRequest);
-
+        registerMyReceiver();
         startService();
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+
+        if(broadcastReceiver != null) {
+            unregisterReceiver(broadcastReceiver);
+        }
+    }
+
+    private void registerMyReceiver() {
+        broadcastReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+
+                float linearAccAvg = intent.getFloatExtra(getString(R.string.linear_acc_avg), 0);
+                vectorsView.setText(String.valueOf(linearAccAvg));
+
+                boolean thresholdExceeded = intent.getBooleanExtra(getString(R.string.threshold_exceeded), false);
+                if (thresholdExceeded) {
+                    thresholdExceededTextView.setText(String.valueOf(linearAccAvg));
+                }
+            }
+        };
+        registerReceiver(broadcastReceiver, new IntentFilter("com.yulin.ivan.applesguardian"));
     }
 
 
     public void startService() {
-        Intent serviceIntent = new Intent(this, AcceleratorToneService.class);
-        ContextCompat.startForegroundService(this, serviceIntent);
-    }
-
-    @Override
-    protected void onPostResume() {
-        super.onPostResume();
-        setMotionListeners();
-    }
-
-    private void setMotionListeners() {
-        sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
-
-        list = sensorManager.getSensorList(Sensor.TYPE_ACCELEROMETER);
-        if (list.size() > 0) {
-            sensorManager.registerListener(this, (Sensor) list.get(0), SensorManager.SENSOR_DELAY_NORMAL);
-        } else {
-            Toast.makeText(getBaseContext(), "Error: No Accelerometer.", Toast.LENGTH_LONG).show();
+        boolean isServiceRunning = sharedPref.getBoolean(getString(R.string.service_is_running), false);
+        if (!isServiceRunning) {
+            Intent serviceIntent = new Intent(this, AcceleratorToneService.class);
+            ContextCompat.startForegroundService(this, serviceIntent);
         }
     }
 
-
+    @SuppressLint("ApplySharedPref")
     @Override
     public void onClick(View view) {
         String thresholdString = thresholdTextView.getText().toString();
@@ -99,8 +109,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 currentThreshold += .1;
                 break;
         }
-        currentThreshold = round(currentThreshold, 1);
-        thresholdTextView.setText(String.valueOf(currentThreshold).substring(0, 3));
+        currentThreshold = round(currentThreshold, 2);
+        thresholdTextView.setText(String.valueOf(currentThreshold));
+        sharedPref.edit().putFloat(getString(R.string.threshold), currentThreshold).apply();
     }
 
     /**
@@ -122,6 +133,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         sharedPref.edit().putFloat(getString(R.string.threshold), thresholdNum).apply();
     }
 
+    @SuppressLint("SetTextI18n")
     @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
         float[] values = sensorEvent.values;

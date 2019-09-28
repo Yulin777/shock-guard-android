@@ -16,34 +16,29 @@ import android.media.AudioManager;
 import android.media.ToneGenerator;
 import android.os.AsyncTask;
 import android.os.Build;
-import android.os.IBinder;
+import android.os.Bundle;
 import android.os.Handler;
+import android.os.IBinder;
 
 import androidx.core.app.NotificationCompat;
 
 import com.yulin.ivan.applesguardian.MainActivity;
 import com.yulin.ivan.applesguardian.R;
 
-import java.util.List;
-
 import static android.media.ToneGenerator.MAX_VOLUME;
 import static androidx.core.app.NotificationCompat.PRIORITY_MAX;
 import static com.yulin.ivan.applesguardian.MainActivity.THRESHOLD_CONST;
-import static java.lang.Math.pow;
-import static java.lang.Math.sqrt;
 
-public class AcceleratorToneService extends Service {
+public class AcceleratorToneService extends Service implements SensorEventListener {
     public static final String CHANNEL_ID = "ForegroundServiceChannel";
 
     private static final int TONE_DURATION = 300;
-    private float currentThreshold;
+    private static final int SAMPLING_PERIOD = 1000 / 30;
     private SharedPreferences sharedPref;
     private SensorManager sensorManager;
-    private List list;
     private ToneGenerator toneGenerator;
-    private SensorEventListener sensorEventListener;
     private boolean isTonePlaying = false;
-    private SensorEvent _sensorEvent;
+    private Sensor linearAccelerationSensor;
 
     public AcceleratorToneService() {
     }
@@ -57,41 +52,28 @@ public class AcceleratorToneService extends Service {
     public void onCreate() {
         super.onCreate();
 
-        sharedPref = getApplicationContext().getSharedPreferences("", Context.MODE_PRIVATE);
+        sharedPref = getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE);
 
         toneGenerator = new ToneGenerator(AudioManager.STREAM_MUSIC, MAX_VOLUME);
 
         sensorManager = (SensorManager) getApplicationContext().getSystemService(SENSOR_SERVICE);
         if (sensorManager != null) {
-            list = sensorManager.getSensorList(Sensor.TYPE_ACCELEROMETER);
+            linearAccelerationSensor = sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
         }
-
-        sensorEventListener = new SensorEventListener() {
-            @Override
-            public void onSensorChanged(SensorEvent sensorEvent) {
-                _sensorEvent = sensorEvent;
-                float[] values = _sensorEvent.values;
-                currentThreshold = sharedPref.getFloat(getApplicationContext().getString(R.string.threshold), THRESHOLD_CONST);
-
-                if (sqrt(pow(values[0], 2) + pow(values[1], 2) + pow(values[2], 2)) > currentThreshold + 10) {
-                    if (!isTonePlaying) {
-                        isTonePlaying = true;
-                        toneGenerator.startTone(ToneGenerator.TONE_CDMA_HIGH_L, TONE_DURATION);
-                        new Handler().postDelayed(() -> isTonePlaying = false, TONE_DURATION);
-                    }
-                }
-
-            }
-
-            @Override
-            public void onAccuracyChanged(Sensor sensor, int i) {
-            }
-        };
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         createNotificationChannel();
+        displayNotification();
+        sharedPref.edit().putBoolean(getString(R.string.service_is_running), true).apply();
+
+        AsyncTask.execute(() -> sensorManager.registerListener(this, linearAccelerationSensor, SAMPLING_PERIOD));
+
+        return START_STICKY;
+    }
+
+    private void displayNotification() {
         Intent notificationIntent = new Intent(this, MainActivity.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(this,
                 0, notificationIntent, 0);
@@ -105,15 +87,7 @@ public class AcceleratorToneService extends Service {
 
         startForeground(1, notification);
 
-        AsyncTask.execute(() -> {
-            if (list.size() > 0) {
-                sensorManager.registerListener(sensorEventListener, (Sensor) list.get(0), SensorManager.SENSOR_DELAY_NORMAL);
-            }
-        });
-
-        return START_STICKY;
     }
-
 
 
     private void createNotificationChannel() {
@@ -125,7 +99,64 @@ public class AcceleratorToneService extends Service {
             );
 
             NotificationManager manager = getSystemService(NotificationManager.class);
-            manager.createNotificationChannel(serviceChannel);
+            if (manager != null) {
+                manager.createNotificationChannel(serviceChannel);
+            }
         }
+    }
+
+    @Override
+    public void onSensorChanged(SensorEvent sensorEvent) {
+        float currentThreshold = sharedPref.getFloat(getApplicationContext().getString(R.string.threshold), THRESHOLD_CONST);
+        float linearAccAvg = linearSensorValuesAvg(sensorEvent);
+        sendBroadcastToActivity(linearAccAvg, linearAccAvg > currentThreshold);
+
+        if (linearAccAvg > currentThreshold) {
+            if (!isTonePlaying) {
+                isTonePlaying = true;
+                toneGenerator.startTone(ToneGenerator.TONE_CDMA_HIGH_L, TONE_DURATION);
+                new Handler().postDelayed(() -> isTonePlaying = false, TONE_DURATION);
+            }
+        }
+    }
+
+    private void sendBroadcastToActivity(float linearAccAvg, boolean thresholdExceede) {
+        Intent in = new Intent("com.yulin.ivan.applesguardian");
+        in.putExtra(getString(R.string.linear_acc_avg), linearAccAvg);
+        in.putExtra(getString(R.string.threshold_exceeded), thresholdExceede);
+        sendBroadcast(in);
+    }
+
+    private float linearSensorValuesAvg(SensorEvent sensorEvent) {
+        float[] values = new float[3];
+        System.arraycopy(sensorEvent.values, 0, values, 0, values.length);
+
+        float sum = 0;
+        for (float value : values) {
+            sum += value;
+        }
+        return sum / values.length;
+    }
+
+    @Override
+    public void onAccuracyChanged(Sensor sensor, int i) {
+    }
+
+    @Override
+    public void onDestroy() {
+        sharedPref.edit().putBoolean(getString(R.string.service_is_running), false).apply();
+        super.onDestroy();
+    }
+
+    @Override
+    public boolean onUnbind(Intent intent) {
+        sharedPref.edit().putBoolean(getString(R.string.service_is_running), false).apply();
+        return super.onUnbind(intent);
+    }
+
+    @Override
+    public void onRebind(Intent intent) {
+        sharedPref.edit().putBoolean(getString(R.string.service_is_running), true).apply();
+        super.onRebind(intent);
     }
 }

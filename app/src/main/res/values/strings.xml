@@ -1,4 +1,8 @@
 <resources>
     <string name="app_name">ApplesGuardian</string>
     <string name="threshold">threshold</string>
+    <string name="linear_acc_avg">linear_acc_avg</string>
+    <string name="service_is_running">service_is_running</string>
+    <string name="threshold_exceeded">threshold_exceeded</string>
+    <string name="preference_file_key">preference_file_key</string>
 </resources>
