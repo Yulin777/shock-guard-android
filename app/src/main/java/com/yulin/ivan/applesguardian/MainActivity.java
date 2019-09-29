@@ -9,7 +9,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.view.MotionEvent;
 import android.view.View;
 import android.widget.TextView;
 
@@ -25,7 +24,7 @@ import java.math.BigDecimal;
  * created byy Ivan Y on 25/09/19
  */
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener, View.OnTouchListener {
+public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
     public final static float THRESHOLD_CONST = 5;
     private static final float MAX_THRESHOLD_VALUE = 20;
@@ -36,7 +35,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     TextView thresholdExceededTextView;
     float currentThreshold;
     private SharedPreferences sharedPref;
-    private RepeatListener touchRepeatListener;
 
 
     @Override
@@ -46,15 +44,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         isRunning = true;
 
-        // the code to execute repeatedly
-        touchRepeatListener = new RepeatListener(400, 100, this);
+        RepeatListener touchRepeatListener = new RepeatListener(400, 100, this);
 
         thresholdTextView = findViewById(R.id.threshold);
         vectorsView = findViewById(R.id.vectors);
         thresholdExceededTextView = findViewById(R.id.exceed_threshold);
-        findViewById(R.id.dec_threshold).setOnClickListener(this);
         findViewById(R.id.dec_threshold).setOnTouchListener(touchRepeatListener);
-        findViewById(R.id.inc_threshold).setOnClickListener(this);
         findViewById(R.id.inc_threshold).setOnTouchListener(touchRepeatListener);
 
         sharedPref = getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE);
@@ -67,8 +62,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if (isBluetoothHeadsetConnected()) {
             sendBroadcast(new Intent(this, BootDeviceReceiver.class).setAction("doesnt matter"));
         }
-
-
 
     }
 
@@ -138,12 +131,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         thresholdTextView.setText(String.valueOf(currentThreshold));
         sharedPref.edit().putFloat(getString(R.string.threshold), currentThreshold).apply();
     }
-
-    @Override
-    public boolean onTouch(View view, MotionEvent motionEvent) {
-        return false;
-    }
-
 
     /**
      * WTF JAVA?!
