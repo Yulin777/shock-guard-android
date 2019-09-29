@@ -9,6 +9,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.TextView;
 
@@ -24,7 +25,7 @@ import java.math.BigDecimal;
  * created byy Ivan Y on 25/09/19
  */
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener {
+public class MainActivity extends AppCompatActivity implements View.OnClickListener, View.OnTouchListener {
 
     public final static float THRESHOLD_CONST = 5;
     private static final float MAX_THRESHOLD_VALUE = 20;
@@ -35,6 +36,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     TextView thresholdExceededTextView;
     float currentThreshold;
     private SharedPreferences sharedPref;
+    private RepeatListener touchRepeatListener;
 
 
     @Override
@@ -43,11 +45,17 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         setContentView(R.layout.activity_main);
 
         isRunning = true;
+
+        // the code to execute repeatedly
+        touchRepeatListener = new RepeatListener(400, 100, View::performClick);
+
         thresholdTextView = findViewById(R.id.threshold);
         vectorsView = findViewById(R.id.vectors);
         thresholdExceededTextView = findViewById(R.id.exceed_threshold);
         findViewById(R.id.dec_threshold).setOnClickListener(this);
+        findViewById(R.id.dec_threshold).setOnTouchListener(touchRepeatListener);
         findViewById(R.id.inc_threshold).setOnClickListener(this);
+        findViewById(R.id.inc_threshold).setOnTouchListener(touchRepeatListener);
 
         sharedPref = getSharedPreferences(getString(R.string.preference_file_key), Context.MODE_PRIVATE);
 
@@ -59,7 +67,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         if (isBluetoothHeadsetConnected()) {
             sendBroadcast(new Intent(this, BootDeviceReceiver.class).setAction("doesnt matter"));
         }
+
+
+
     }
+
 
     private void registerMyReceiver() {
 
@@ -127,6 +139,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         sharedPref.edit().putFloat(getString(R.string.threshold), currentThreshold).apply();
     }
 
+    @Override
+    public boolean onTouch(View view, MotionEvent motionEvent) {
+        return false;
+    }
+
+
     /**
      * WTF JAVA?!
      */
@@ -162,4 +180,5 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         return mBluetoothAdapter != null && mBluetoothAdapter.isEnabled()
                 && mBluetoothAdapter.getProfileConnectionState(BluetoothHeadset.HEADSET) == BluetoothHeadset.STATE_CONNECTED;
     }
+
 }
