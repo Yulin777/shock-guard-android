@@ -37,13 +37,10 @@ public class RepeatListener implements OnTouchListener {
 
     /**
      * @param initialInterval The interval after first click event
-     * @param normalInterval The interval after second and subsequent click
-     *       events
-     * @param clickListener The OnClickListener, that will be called
-     *       periodically
+     * @param normalInterval The interval after second and subsequent click events
+     * @param clickListener The OnClickListener, that will be called periodically
      */
-    public RepeatListener(int initialInterval, int normalInterval,
-                          OnClickListener clickListener) {
+    public RepeatListener(int initialInterval, int normalInterval, OnClickListener clickListener) {
         if (clickListener == null)
             throw new IllegalArgumentException("null runnable");
         if (initialInterval < 0 || normalInterval < 0)

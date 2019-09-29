@@ -47,7 +47,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         isRunning = true;
 
         // the code to execute repeatedly
-        touchRepeatListener = new RepeatListener(400, 100, View::performClick);
+        touchRepeatListener = new RepeatListener(400, 100, this);
 
         thresholdTextView = findViewById(R.id.threshold);
         vectorsView = findViewById(R.id.vectors);
