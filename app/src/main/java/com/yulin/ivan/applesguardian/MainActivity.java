@@ -80,7 +80,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
                 } else {
 
-                    float linearAccAvg = intent.getFloatExtra(getString(R.string.linear_acc_avg), 0);
+                    double linearAccAvg = intent.getDoubleExtra(getString(R.string.linear_acc_avg), 0);
                     vectorsView.setText(String.valueOf(linearAccAvg));
 
                     boolean thresholdExceeded = intent.getBooleanExtra(getString(R.string.threshold_exceeded), false);

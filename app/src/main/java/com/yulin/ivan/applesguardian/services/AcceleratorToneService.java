@@ -108,7 +108,7 @@ public class AcceleratorToneService extends Service implements SensorEventListen
     @Override
     public void onSensorChanged(SensorEvent sensorEvent) {
         float currentThreshold = sharedPref.getFloat(getApplicationContext().getString(R.string.threshold), THRESHOLD_CONST);
-        float linearAccAvg = linearSensorValuesAvg(sensorEvent);
+        double linearAccAvg = linearSensorValuesAvg(sensorEvent);
         sendBroadcastToActivity(linearAccAvg, linearAccAvg > currentThreshold);
 
         if (linearAccAvg > currentThreshold) {
@@ -120,7 +120,7 @@ public class AcceleratorToneService extends Service implements SensorEventListen
         }
     }
 
-    private void sendBroadcastToActivity(float linearAccAvg, boolean thresholdExceeded) {
+    private void sendBroadcastToActivity(double linearAccAvg, boolean thresholdExceeded) {
         Intent in = new Intent("com.yulin.ivan.applesguardian");
         in.putExtra(getString(R.string.linear_acc_avg), linearAccAvg);
         in.putExtra(getString(R.string.threshold_exceeded), thresholdExceeded);
@@ -128,15 +128,15 @@ public class AcceleratorToneService extends Service implements SensorEventListen
         sendBroadcast(in);
     }
 
-    private float linearSensorValuesAvg(SensorEvent sensorEvent) {
+    private double linearSensorValuesAvg(SensorEvent sensorEvent) {
         float[] values = new float[3];
         System.arraycopy(sensorEvent.values, 0, values, 0, values.length);
 
-        float sum = 0;
+        float squareSum = 0;
         for (float value : values) {
-            sum += value;
+            squareSum += Math.pow(value,2);
         }
-        return sum / values.length;
+        return Math.sqrt(squareSum);
     }
 
     @Override
