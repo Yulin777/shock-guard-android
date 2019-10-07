@@ -1,20 +1,13 @@
 package com.yulin.ivan.applesguardian.services;
 
-import android.app.ActivityManager;
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothHeadset;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
-import android.widget.Toast;
 
 import com.yulin.ivan.applesguardian.MainActivity;
 
-import java.util.List;
-
-import static androidx.core.content.ContextCompat.getSystemService;
 import static com.yulin.ivan.applesguardian.MainActivity.isBluetoothHeadsetConnected;
 
 /**
@@ -22,12 +15,10 @@ import static com.yulin.ivan.applesguardian.MainActivity.isBluetoothHeadsetConne
  */
 
 public class BootDeviceReceiver extends BroadcastReceiver {
-//    Context context;
 
 
     @Override
     public void onReceive(Context context, Intent intent) {
-//        this.context = context;
 
         Intent serviceIntent = new Intent(context, AcceleratorToneService.class);
         serviceIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);

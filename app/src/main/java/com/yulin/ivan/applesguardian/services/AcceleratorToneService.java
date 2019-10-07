@@ -44,7 +44,6 @@ public class AcceleratorToneService extends Service implements SensorEventListen
 
     @Override
     public IBinder onBind(Intent intent) {
-        System.out.println("remove");
         return null;
     }
 
